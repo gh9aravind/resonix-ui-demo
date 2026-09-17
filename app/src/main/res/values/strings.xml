@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Resonix UI Demo</string>
+    <string name="onboarding_tagline">Your music, reimagined in liquid glass.</string>
+    <string name="permission_screen_title">One Last Step</string>
+    <string name="library_screen_title">Your Library</string>
+    <string name="now_playing_queue_title">Up Next</string>
+</resources>
