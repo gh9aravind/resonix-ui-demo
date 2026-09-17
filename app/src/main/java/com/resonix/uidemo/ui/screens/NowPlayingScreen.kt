@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.resonix.uidemo.ui.components.QueueSheet
 import com.resonix.uidemo.ui.model.DemoTrack
 import com.resonix.uidemo.ui.model.DemoTrackCatalog
 import com.resonix.uidemo.ui.theme.ElectricBlue
@@ -64,15 +65,17 @@ import com.resonix.uidemo.ui.util.formatMillis
 @Composable
 fun NowPlayingScreen(
     track: DemoTrack = DemoTrackCatalog.current,
+    queue: List<DemoTrack> = DemoTrackCatalog.queue,
     isPlaying: Boolean,
     progressMs: Long,
     onPlayPauseClick: () -> Unit,
     onSeek: (Long) -> Unit,
     onBack: () -> Unit,
-    onQueueClick: () -> Unit = {}
+    onTrackSelectedFromQueue: (DemoTrack) -> Unit = {}
 ) {
     var shuffleEnabled by remember { mutableStateOf(false) }
     var repeatEnabled by remember { mutableStateOf(false) }
+    var showQueueSheet by remember { mutableStateOf(false) }
 
     val progressFraction = if (track.durationMs > 0) {
         (progressMs.toFloat() / track.durationMs.toFloat()).coerceIn(0f, 1f)
@@ -135,7 +138,7 @@ fun NowPlayingScreen(
                     )
                 }
 
-                IconButton(onClick = onQueueClick) {
+                IconButton(onClick = { showQueueSheet = true }) {
                     Icon(
                         imageVector = Icons.Filled.QueueMusic,
                         contentDescription = "Queue",
@@ -292,6 +295,18 @@ fun NowPlayingScreen(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        if (showQueueSheet) {
+            QueueSheet(
+                queue = queue,
+                currentTrack = track,
+                onDismissRequest = { showQueueSheet = false },
+                onTrackSelected = { selected ->
+                    showQueueSheet = false
+                    onTrackSelectedFromQueue(selected)
+                }
+            )
         }
     }
 }
