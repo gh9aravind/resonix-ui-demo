@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- No app-specific data to back up yet in this UI sandbox. -->
+    </cloud-backup>
+    <device-transfer>
+        <!-- No app-specific data to transfer yet in this UI sandbox. -->
+    </device-transfer>
+</data-extraction-rules>
