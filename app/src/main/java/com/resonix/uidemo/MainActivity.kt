@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import com.resonix.uidemo.ui.screens.OnboardingScreen
 import com.resonix.uidemo.ui.screens.PermissionScreen
 import com.resonix.uidemo.ui.theme.ResonixTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 /**
  * Which screen the in-app preview switcher currently shows. This is a
