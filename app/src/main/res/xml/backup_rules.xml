@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!--
+      UI-only sandbox — no database, DataStore, or downloaded audio yet,
+      so there's nothing app-specific to include or exclude. Kept ready
+      for the real Resonix app's backup rules once local library data
+      (favorites, playlists, playback history) exists.
+    -->
+</full-backup-content>
