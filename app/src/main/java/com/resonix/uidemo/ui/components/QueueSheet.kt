@@ -1,14 +1,14 @@
 package com.resonix.uidemo.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,16 +36,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.resonix.uidemo.ui.model.DemoTrack
 import com.resonix.uidemo.ui.model.DemoTrackCatalog
-import com.resonix.uidemo.ui.theme.NeonCyan
+import com.resonix.uidemo.ui.theme.GlassTokens
+import com.resonix.uidemo.ui.theme.LocalGlassColors
 import com.resonix.uidemo.ui.theme.ResonixTheme
-import com.resonix.uidemo.ui.theme.TextPrimary
-import com.resonix.uidemo.ui.theme.TextSecondary
+import com.resonix.uidemo.ui.theme.pressScaleClickable
 import com.resonix.uidemo.ui.util.formatMillis
 
-/**
- * Glass bottom sheet listing the current playback queue. Tapping a row
- * hands the selected track back to the caller and closes the sheet.
- */
+/** The playback queue, presented in a glass sheet. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QueueSheet(
@@ -53,35 +50,52 @@ fun QueueSheet(
     currentTrack: DemoTrack,
     onDismissRequest: () -> Unit,
     onTrackSelected: (DemoTrack) -> Unit,
-    sheetState: SheetState = rememberModalBottomSheetState()
+    sheetState: SheetState = rememberModalBottomSheetState(),
 ) {
+    val glass = LocalGlassColors.current
+
     GlassBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = sheetState
+        sheetState = sheetState,
     ) {
-        Text(
-            text = "Up Next",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = GlassTokens.SheetContentPaddingH,
+                    vertical = 4.dp,
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "Up next",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = glass.textPrimary,
+            )
+            Text(
+                text = "${queue.size} tracks",
+                style = MaterialTheme.typography.labelSmall,
+                color = glass.textSecondary,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 420.dp)
+                .heightIn(max = GlassTokens.SheetListMaxHeight),
         ) {
             items(queue) { track ->
                 QueueRow(
                     track = track,
                     isCurrent = track == currentTrack,
-                    onClick = { onTrackSelected(track) }
+                    onClick = { onTrackSelected(track) },
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(4.dp))
     }
 }
 
@@ -89,47 +103,53 @@ fun QueueSheet(
 private fun QueueRow(
     track: DemoTrack,
     isCurrent: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
+    val glass = LocalGlassColors.current
+    val accent = MaterialTheme.colorScheme.primary
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .pressScaleClickable(pressedScale = 0.98f, onClick = onClick)
+            .padding(
+                horizontal = GlassTokens.SheetOptionPaddingH,
+                vertical = GlassTokens.SheetOptionPaddingV,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
                 .size(44.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(GlassTokens.LibrarySmallRadius))
                 .background(Brush.linearGradient(track.artGradient)),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = if (isCurrent) Icons.Filled.GraphicEq else Icons.Filled.MusicNote,
                 contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(20.dp)
+                tint = Color.White.copy(alpha = 0.92f),
+                modifier = Modifier.size(20.dp),
             )
         }
 
-        Spacer(modifier = Modifier.width(14.dp))
+        Spacer(modifier = Modifier.width(GlassTokens.RowIconSpacing))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = track.title,
                 style = MaterialTheme.typography.titleMedium,
-                color = if (isCurrent) NeonCyan else TextPrimary,
                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.SemiBold,
+                color = if (isCurrent) accent else glass.textPrimary,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = track.artist,
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary,
+                color = glass.textSecondary,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
 
@@ -138,21 +158,21 @@ private fun QueueRow(
         Text(
             text = formatMillis(track.durationMs),
             style = MaterialTheme.typography.labelSmall,
-            color = TextSecondary
+            color = glass.textDisabled,
         )
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF020207)
+@Preview(showBackground = true, backgroundColor = 0xFF0A0A0A)
 @Composable
-private fun QueueSheetContentPreview() {
+private fun QueueRowsPreview() {
     ResonixTheme {
         Column {
             DemoTrackCatalog.queue.forEach { track ->
                 QueueRow(
                     track = track,
                     isCurrent = track == DemoTrackCatalog.current,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
