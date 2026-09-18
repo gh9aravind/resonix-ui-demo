@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.resonix.uidemo.ui.model.DemoTrack
 import com.resonix.uidemo.ui.model.DemoTrackCatalog
 import com.resonix.uidemo.ui.screens.LibraryScreen
@@ -32,7 +33,7 @@ private enum class PreviewScreen {
     Onboarding,
     Permissions,
     Library,
-    NowPlaying
+    NowPlaying,
 }
 
 class MainActivity : ComponentActivity() {
@@ -40,9 +41,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ResonixTheme {
-                ResonixUiPlayground()
-            }
+            ResonixUiPlayground()
         }
     }
 }
@@ -51,13 +50,32 @@ class MainActivity : ComponentActivity() {
 private fun ResonixUiPlayground() {
     var currentScreen by remember { mutableStateOf(PreviewScreen.Onboarding) }
 
-    // Faked playback state — there is no real audio engine in this sandbox.
+    // Faked playback state — there is no audio engine in this sandbox.
+    val queue = DemoTrackCatalog.queue
     var currentTrack by remember { mutableStateOf(DemoTrackCatalog.current) }
     var isPlaying by remember { mutableStateOf(true) }
     var progressMs by remember { mutableLongStateOf(45_000L) }
 
-    // Ticks the fake progress forward while "playing"; restarts cleanly
-    // whenever the track changes so the loop checks the new duration.
+    // The accent drives the whole palette: every border, background gradient
+    // and highlight retints with it. In the real app it will be extracted
+    // from the album artwork; here the demo track supplies it directly.
+    val accent: Color = currentTrack.artGradient.firstOrNull() ?: Color(0xFF0066FF)
+
+    fun selectTrack(track: DemoTrack) {
+        currentTrack = track
+        progressMs = 0L
+        isPlaying = true
+    }
+
+    fun skipBy(offset: Int) {
+        val index = queue.indexOf(currentTrack)
+        if (index < 0) return
+        val nextIndex = ((index + offset) % queue.size + queue.size) % queue.size
+        selectTrack(queue[nextIndex])
+    }
+
+    // Ticks the fake position forward while playing; restarts on track change
+    // so the loop always checks the new track's duration.
     LaunchedEffect(isPlaying, currentTrack) {
         while (isPlaying) {
             delay(500)
@@ -69,48 +87,47 @@ private fun ResonixUiPlayground() {
         }
     }
 
-    fun selectTrack(track: DemoTrack) {
-        currentTrack = track
-        progressMs = 0L
-        isPlaying = true
-    }
-
     val progressFraction = if (currentTrack.durationMs > 0) {
         (progressMs.toFloat() / currentTrack.durationMs.toFloat()).coerceIn(0f, 1f)
     } else {
         0f
     }
 
-    Surface(modifier = Modifier.fillMaxSize()) {
-        when (currentScreen) {
-            PreviewScreen.Onboarding -> OnboardingScreen(
-                onGetStarted = { currentScreen = PreviewScreen.Permissions }
-            )
+    ResonixTheme(accentColor = accent) {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            when (currentScreen) {
+                PreviewScreen.Onboarding -> OnboardingScreen(
+                    onGetStarted = { currentScreen = PreviewScreen.Permissions },
+                )
 
-            PreviewScreen.Permissions -> PermissionScreen(
-                onContinue = { currentScreen = PreviewScreen.Library }
-            )
+                PreviewScreen.Permissions -> PermissionScreen(
+                    onContinue = { currentScreen = PreviewScreen.Library },
+                )
 
-            PreviewScreen.Library -> LibraryScreen(
-                tracks = DemoTrackCatalog.queue,
-                currentTrack = currentTrack,
-                isPlaying = isPlaying,
-                progressFraction = progressFraction,
-                onTrackClick = { track -> selectTrack(track) },
-                onPlayPauseClick = { isPlaying = !isPlaying },
-                onExpandPlayer = { currentScreen = PreviewScreen.NowPlaying }
-            )
+                PreviewScreen.Library -> LibraryScreen(
+                    tracks = queue,
+                    currentTrack = currentTrack,
+                    isPlaying = isPlaying,
+                    progressFraction = progressFraction,
+                    onTrackClick = { track -> selectTrack(track) },
+                    onPlayPauseClick = { isPlaying = !isPlaying },
+                    onNextClick = { skipBy(1) },
+                    onExpandPlayer = { currentScreen = PreviewScreen.NowPlaying },
+                )
 
-            PreviewScreen.NowPlaying -> NowPlayingScreen(
-                track = currentTrack,
-                queue = DemoTrackCatalog.queue,
-                isPlaying = isPlaying,
-                progressMs = progressMs,
-                onPlayPauseClick = { isPlaying = !isPlaying },
-                onSeek = { progressMs = it.coerceIn(0L, currentTrack.durationMs) },
-                onBack = { currentScreen = PreviewScreen.Library },
-                onTrackSelectedFromQueue = { track -> selectTrack(track) }
-            )
+                PreviewScreen.NowPlaying -> NowPlayingScreen(
+                    track = currentTrack,
+                    queue = queue,
+                    isPlaying = isPlaying,
+                    progressMs = progressMs,
+                    onPlayPauseClick = { isPlaying = !isPlaying },
+                    onSeek = { progressMs = it.coerceIn(0L, currentTrack.durationMs) },
+                    onPrevious = { skipBy(-1) },
+                    onNext = { skipBy(1) },
+                    onBack = { currentScreen = PreviewScreen.Library },
+                    onTrackSelectedFromQueue = { track -> selectTrack(track) },
+                )
+            }
         }
     }
 }
