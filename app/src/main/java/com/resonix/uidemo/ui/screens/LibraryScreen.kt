@@ -1,7 +1,7 @@
 package com.resonix.uidemo.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,23 +36,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.resonix.uidemo.ui.components.MiniPlayerBar
+import com.resonix.uidemo.ui.components.PlayerIconButton
 import com.resonix.uidemo.ui.model.DemoTrack
 import com.resonix.uidemo.ui.model.DemoTrackCatalog
-import com.resonix.uidemo.ui.theme.NeonCyan
-import com.resonix.uidemo.ui.theme.ResonixBackgroundBrush
-import com.resonix.uidemo.ui.theme.ResonixGlowBrushBottomRight
-import com.resonix.uidemo.ui.theme.ResonixGlowBrushTopLeft
+import com.resonix.uidemo.ui.theme.GlassTokens
+import com.resonix.uidemo.ui.theme.LocalGlassColors
 import com.resonix.uidemo.ui.theme.ResonixTheme
-import com.resonix.uidemo.ui.theme.TextPrimary
-import com.resonix.uidemo.ui.theme.TextSecondary
+import com.resonix.uidemo.ui.theme.glassScreenBackground
+import com.resonix.uidemo.ui.theme.pressScaleClickable
 import com.resonix.uidemo.ui.util.formatMillis
 
-/**
- * The library "home" screen: a scrollable track list with a [MiniPlayerBar]
- * docked at the bottom. Tapping a row plays that track (in this sandbox,
- * just switches the fake "current track" state); tapping the mini player
- * expands to the full [NowPlayingScreen].
- */
 @Composable
 fun LibraryScreen(
     tracks: List<DemoTrack>,
@@ -57,58 +54,82 @@ fun LibraryScreen(
     progressFraction: Float,
     onTrackClick: (DemoTrack) -> Unit,
     onPlayPauseClick: () -> Unit,
-    onExpandPlayer: () -> Unit
+    onNextClick: () -> Unit,
+    onExpandPlayer: () -> Unit,
 ) {
+    val glass = LocalGlassColors.current
+    val accent = MaterialTheme.colorScheme.primary
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ResonixBackgroundBrush)
+            .glassScreenBackground(accent, topBlend = 0.72f, midBlend = 0.92f),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .align(Alignment.TopEnd)
-                .background(ResonixGlowBrushTopLeft)
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .align(Alignment.BottomStart)
-                .background(ResonixGlowBrushBottomRight)
-        )
-
         Column(modifier = Modifier.fillMaxSize()) {
-            Text(
-                text = "Your Library",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(
+                        start = GlassTokens.ScreenPaddingH + 8.dp,
+                        end = GlassTokens.ScreenPaddingH,
+                        top = 20.dp,
+                        bottom = 16.dp,
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Library",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = glass.textPrimary,
+                    modifier = Modifier.weight(1f),
+                )
+                PlayerIconButton(onClick = { }, size = 44.dp) {
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = "Search",
+                        tint = glass.textPrimary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            }
 
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
+                contentPadding = PaddingValues(
+                    horizontal = GlassTokens.ScreenPaddingH,
+                    vertical = 4.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(GlassTokens.LibraryItemGap),
             ) {
                 items(tracks) { track ->
-                    val isCurrent = track == currentTrack
                     LibraryTrackRow(
                         track = track,
-                        isCurrent = isCurrent,
-                        onClick = { onTrackClick(track) }
+                        isCurrent = track == currentTrack,
+                        onClick = { onTrackClick(track) },
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             MiniPlayerBar(
                 track = currentTrack,
                 isPlaying = isPlaying,
                 progressFraction = progressFraction,
                 onPlayPauseClick = onPlayPauseClick,
+                onNextClick = onNextClick,
                 onExpandClick = onExpandPlayer,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Spacer(
+                modifier = Modifier
+                    .height(GlassTokens.SafeBottomMin)
+                    .navigationBarsPadding(),
             )
         }
     }
@@ -118,47 +139,52 @@ fun LibraryScreen(
 private fun LibraryTrackRow(
     track: DemoTrack,
     isCurrent: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
+    val glass = LocalGlassColors.current
+    val accent = MaterialTheme.colorScheme.primary
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .pressScaleClickable(pressedScale = 0.98f, onClick = onClick)
+            .clip(RoundedCornerShape(GlassTokens.LibraryCardRadius))
+            .padding(horizontal = 8.dp, vertical = GlassTokens.RowPaddingV),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .size(GlassTokens.LibraryBadgeSize)
+                .clip(RoundedCornerShape(GlassTokens.LibrarySmallRadius))
                 .background(Brush.linearGradient(track.artGradient)),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = if (isCurrent) Icons.Filled.GraphicEq else Icons.Filled.MusicNote,
                 contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(22.dp)
+                tint = Color.White.copy(alpha = 0.92f),
+                modifier = Modifier.size(22.dp),
             )
         }
 
-        Spacer(modifier = Modifier.width(14.dp))
+        Spacer(modifier = Modifier.width(GlassTokens.RowIconSpacing))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = track.title,
                 style = MaterialTheme.typography.titleMedium,
-                color = if (isCurrent) NeonCyan else TextPrimary,
                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.SemiBold,
+                color = if (isCurrent) accent else glass.textPrimary,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
+            Spacer(modifier = Modifier.height(GlassTokens.RowTextSpacing))
             Text(
                 text = track.artist,
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary,
+                color = glass.textSecondary,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
 
@@ -167,12 +193,12 @@ private fun LibraryTrackRow(
         Text(
             text = formatMillis(track.durationMs),
             style = MaterialTheme.typography.labelSmall,
-            color = TextSecondary
+            color = glass.textDisabled,
         )
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF020207)
+@Preview(showBackground = true, backgroundColor = 0xFF000000)
 @Composable
 private fun LibraryScreenPreview() {
     ResonixTheme {
@@ -180,10 +206,11 @@ private fun LibraryScreenPreview() {
             tracks = DemoTrackCatalog.queue,
             currentTrack = DemoTrackCatalog.current,
             isPlaying = true,
-            progressFraction = 0.4f,
+            progressFraction = 0.42f,
             onTrackClick = {},
             onPlayPauseClick = {},
-            onExpandPlayer = {}
+            onNextClick = {},
+            onExpandPlayer = {},
         )
     }
 }
