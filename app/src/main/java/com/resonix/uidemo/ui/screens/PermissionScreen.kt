@@ -5,10 +5,10 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,8 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LibraryMusic
@@ -27,43 +27,43 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.resonix.uidemo.ui.components.GlassTile
-import com.resonix.uidemo.ui.components.GlowButton
-import com.resonix.uidemo.ui.theme.ElectricBlue
-import com.resonix.uidemo.ui.theme.NeonCyan
-import com.resonix.uidemo.ui.theme.ResonixBackgroundBrush
-import com.resonix.uidemo.ui.theme.ResonixGlowBrushBottomRight
-import com.resonix.uidemo.ui.theme.ResonixGlowBrushTopLeft
+import com.resonix.uidemo.ui.components.GlassButton
+import com.resonix.uidemo.ui.components.GlassCard
+import com.resonix.uidemo.ui.components.GlassIconBadge
+import com.resonix.uidemo.ui.components.segmentShape
+import com.resonix.uidemo.ui.theme.GlassTokens
+import com.resonix.uidemo.ui.theme.LocalGlassColors
 import com.resonix.uidemo.ui.theme.ResonixTheme
 import com.resonix.uidemo.ui.theme.SuccessGreen
-import com.resonix.uidemo.ui.theme.TextPrimary
-import com.resonix.uidemo.ui.theme.TextSecondary
-import com.resonix.uidemo.ui.theme.VibrantPurple
+import com.resonix.uidemo.ui.theme.glassScreenBackground
+import com.resonix.uidemo.ui.theme.segmentPosition
 
 private data class PermissionItem(
     val permission: String,
     val title: String,
     val description: String,
-    val icon: ImageVector
+    val icon: ImageVector,
 )
 
 @Composable
 fun PermissionScreen(
-    onContinue: () -> Unit
+    onContinue: () -> Unit,
 ) {
     val context = LocalContext.current
+    val accent = MaterialTheme.colorScheme.primary
+    val glass = LocalGlassColors.current
 
     val audioPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_AUDIO
@@ -76,140 +76,119 @@ fun PermissionScreen(
             add(
                 PermissionItem(
                     permission = audioPermission,
-                    title = "Music Library Access",
-                    description = "Lets Resonix scan your device for local audio files.",
-                    icon = Icons.Filled.LibraryMusic
-                )
+                    title = "Music library",
+                    description = "Lets Resonix find the audio files already on your device.",
+                    icon = Icons.Filled.LibraryMusic,
+                ),
             )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 add(
                     PermissionItem(
                         permission = Manifest.permission.POST_NOTIFICATIONS,
-                        title = "Playback Notifications",
-                        description = "Shows the now-playing controls in your notification shade.",
-                        icon = Icons.Filled.Notifications
-                    )
+                        title = "Playback controls",
+                        description = "Shows what's playing in your notification shade.",
+                        icon = Icons.Filled.Notifications,
+                    ),
                 )
             }
         }
     }
 
-    val grantedState = remember {
-        mutableStateOf(
-            permissionItems.associate { item ->
-                item.permission to (ContextCompat.checkSelfPermission(
-                    context,
-                    item.permission
-                ) == PackageManager.PERMISSION_GRANTED)
-            }
-        )
+    fun readGrantState(): Map<String, Boolean> = permissionItems.associate { item ->
+        item.permission to (
+            ContextCompat.checkSelfPermission(context, item.permission) ==
+                PackageManager.PERMISSION_GRANTED
+            )
     }
+
+    var grantState by remember { mutableStateOf(readGrantState()) }
 
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
+        contract = ActivityResultContracts.RequestPermission(),
     ) {
-        // Re-check every permission's live status to keep all tiles in sync,
-        // regardless of which single permission the launcher just resolved.
-        grantedState.value = permissionItems.associate { item ->
-            item.permission to (ContextCompat.checkSelfPermission(
-                context,
-                item.permission
-            ) == PackageManager.PERMISSION_GRANTED)
-        }
+        // Re-read every permission rather than just the one that resolved, so
+        // a grant made from system settings mid-flow is picked up too.
+        grantState = readGrantState()
     }
 
-    val allGranted = grantedState.value.values.all { it }
+    val allGranted = grantState.values.all { it }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ResonixBackgroundBrush)
+            .glassScreenBackground(accent),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .align(Alignment.TopEnd)
-                .background(ResonixGlowBrushTopLeft)
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .align(Alignment.BottomStart)
-                .background(ResonixGlowBrushBottomRight)
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .systemBarsPadding()
+                .padding(horizontal = GlassTokens.ScreenPaddingH),
         ) {
+            Spacer(modifier = Modifier.height(48.dp))
+
             Text(
-                text = "One Last Step",
+                text = "One last step",
                 style = MaterialTheme.typography.headlineMedium,
-                color = TextPrimary,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = glass.textPrimary,
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                text = "Resonix needs a couple of permissions to play your music smoothly.",
+                text = "Resonix needs a couple of permissions before it can play anything.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary
+                color = glass.textSecondary,
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(GlassTokens.SegmentGap),
             ) {
-                permissionItems.forEach { item ->
-                    val isGranted = grantedState.value[item.permission] == true
-                    GlassTile(
-                        modifier = Modifier.fillMaxWidth(),
-                        accentBrush = if (isGranted) {
-                            Brush.linearGradient(listOf(SuccessGreen, SuccessGreen))
-                        } else {
-                            Brush.linearGradient(listOf(NeonCyan, VibrantPurple))
-                        }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(ElectricBlue.copy(alpha = 0.18f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.title,
-                                    tint = NeonCyan
-                                )
-                            }
+                permissionItems.forEachIndexed { index, item ->
+                    val isGranted = grantState[item.permission] == true
+                    val rowAccent = if (isGranted) SuccessGreen else accent
 
-                            Spacer(modifier = Modifier.width(14.dp))
+                    GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = segmentShape(index, permissionItems.size),
+                        position = segmentPosition(index, permissionItems.size),
+                        borderColor = rowAccent,
+                        contentPadding = PaddingValues(
+                            horizontal = GlassTokens.SegmentPaddingH,
+                            vertical = GlassTokens.SegmentPaddingV,
+                        ),
+                        onClick = if (isGranted) null else {
+                            { launcher.launch(item.permission) }
+                        },
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            GlassIconBadge(
+                                icon = item.icon,
+                                contentDescription = null,
+                                tint = rowAccent,
+                            )
+
+                            Spacer(modifier = Modifier.width(GlassTokens.SegmentIconSpacing))
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = item.title,
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = TextPrimary,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = glass.textPrimary,
                                 )
+                                Spacer(modifier = Modifier.height(GlassTokens.RowTextSpacing))
                                 Text(
                                     text = item.description,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = TextSecondary
+                                    color = glass.textSecondary,
                                 )
                             }
 
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
 
                             Icon(
                                 imageVector = if (isGranted) {
@@ -218,8 +197,8 @@ fun PermissionScreen(
                                     Icons.Filled.RadioButtonUnchecked
                                 },
                                 contentDescription = if (isGranted) "Granted" else "Not granted",
-                                tint = if (isGranted) SuccessGreen else TextSecondary,
-                                modifier = Modifier.size(26.dp)
+                                tint = if (isGranted) SuccessGreen else glass.textDisabled,
+                                modifier = Modifier.size(24.dp),
                             )
                         }
                     }
@@ -228,29 +207,31 @@ fun PermissionScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            if (!allGranted) {
-                GlowButton(
-                    text = "Grant Permissions",
+            if (allGranted) {
+                GlassButton(
+                    text = "Continue",
+                    onClick = onContinue,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                GlassButton(
+                    text = "Grant permissions",
                     onClick = {
                         val next = permissionItems.firstOrNull { item ->
-                            grantedState.value[item.permission] != true
+                            grantState[item.permission] != true
                         }
                         next?.let { launcher.launch(it.permission) }
                     },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            } else {
-                GlowButton(
-                    text = "Continue",
-                    onClick = onContinue,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
+
+            Spacer(modifier = Modifier.height(GlassTokens.ScreenPaddingBottom))
         }
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF020207)
+@Preview(showBackground = true, backgroundColor = 0xFF000000)
 @Composable
 private fun PermissionScreenPreview() {
     ResonixTheme {
