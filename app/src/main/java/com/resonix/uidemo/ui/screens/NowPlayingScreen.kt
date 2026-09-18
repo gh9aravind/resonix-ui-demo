@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +63,7 @@ import com.resonix.uidemo.ui.theme.TextSecondary
 import com.resonix.uidemo.ui.theme.VibrantPurple
 import com.resonix.uidemo.ui.util.formatMillis
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NowPlayingScreen(
     track: DemoTrack = DemoTrackCatalog.current,
