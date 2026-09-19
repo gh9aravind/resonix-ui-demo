@@ -99,6 +99,10 @@ object GlassTokens {
     val RowTitleSize = 15.sp
     val SectionTitleSize = 12.sp
 
+    // -- Switches ------------------------------------------------------------
+    const val SwitchUncheckedThumbAlpha = 0.6f
+    const val SwitchUncheckedTrackAlpha = 0.06f
+
     // -- Motion ------------------------------------------------------------
     const val PressScale = 0.96f
     const val PressDampingRatio = 0.6f
