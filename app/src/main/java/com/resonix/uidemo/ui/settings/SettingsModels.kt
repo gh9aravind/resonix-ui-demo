@@ -6,17 +6,24 @@ package com.resonix.uidemo.ui.settings
  * own and reused if Settings ever needs a second surface.
  */
 
-enum class AudioEngineOption(val displayName: String, val description: String) {
+enum class AudioEngineOption(
+    val displayName: String,
+    val shortLabel: String,
+    val description: String,
+) {
     AAUDIO_EXCLUSIVE(
         displayName = "AAudio (Exclusive Mode)",
+        shortLabel = "AAudio",
         description = "Lowest latency; claims the audio device for Resonix alone.",
     ),
     OPENSL_ES(
         displayName = "OpenSL ES",
+        shortLabel = "OpenSL",
         description = "Broad device compatibility, slightly higher latency.",
     ),
     AUDIO_TRACK(
         displayName = "AudioTrack",
+        shortLabel = "Track",
         description = "The standard Android output path.",
     ),
 }
@@ -87,7 +94,7 @@ data class SettingsUiState(
 
     // -- DSP & Sound Processing --------------------------------------------
     val parametricEqEnabled: Boolean = false,
-    val parametricEqBandCount: Int = 0,
+    val parametricEqBandCount: Int = 8,
     val autoEqProfile: String? = null,
     val gaplessPlayback: Boolean = true,
     val crossfadeDurationSeconds: Float = 0f,
