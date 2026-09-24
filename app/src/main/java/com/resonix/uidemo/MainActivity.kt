@@ -29,11 +29,6 @@ import com.resonix.uidemo.ui.screens.SettingsScreen
 import com.resonix.uidemo.ui.theme.ResonixTheme
 import kotlinx.coroutines.delay
 
-/**
- * The high-level flow: a one-time onboarding + permissions run, then the
- * main tabbed app. This is a UI-sandbox-only mechanism — the real Resonix
- * app will drive this with NavHost once the UI ships upstream.
- */
 private enum class AppStage {
     Onboarding,
     Permissions,
@@ -56,15 +51,11 @@ private fun ResonixUiPlayground() {
     var currentTab by remember { mutableStateOf(MainTab.Home) }
     var showNowPlaying by remember { mutableStateOf(false) }
 
-    // Faked playback state — there is no audio engine in this sandbox.
     val queue = DemoTrackCatalog.queue
     var currentTrack by remember { mutableStateOf(DemoTrackCatalog.current) }
     var isPlaying by remember { mutableStateOf(true) }
     var progressMs by remember { mutableLongStateOf(45_000L) }
 
-    // The accent drives the whole palette: every border, background gradient
-    // and highlight retints with it. In the real app it will be extracted
-    // from the album artwork; here the demo track supplies it directly.
     val accent: Color = currentTrack.artGradient.firstOrNull() ?: Color(0xFF0066FF)
 
     fun selectTrack(track: DemoTrack) {
@@ -80,8 +71,6 @@ private fun ResonixUiPlayground() {
         selectTrack(queue[nextIndex])
     }
 
-    // Ticks the fake position forward while playing; restarts on track change
-    // so the loop always checks the new track's duration.
     LaunchedEffect(isPlaying, currentTrack) {
         while (isPlaying) {
             delay(500)
@@ -136,7 +125,9 @@ private fun ResonixUiPlayground() {
                                     onTrackClick = { track -> selectTrack(track) },
                                 )
 
-                                MainTab.Settings -> SettingsScreen()
+                                MainTab.Settings -> SettingsScreen(
+                                    onClose = { currentTab = MainTab.Home },
+                                )
                             }
                         }
 
